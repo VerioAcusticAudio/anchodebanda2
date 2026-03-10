@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verio - Aplicaciones Didácticas (Calculadora de Ancho de Banda)</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --cream: #FAF6F1;
+            --cream-dark: #F0EBE3;
+            --white: #FFFFFF;
+            --terracotta: #C4704B;
+            --terracotta-light: #D4886A;
+            --terracotta-dark: #A45A3A;
+            --sage: #8B9D77;
+            --sage-light: #A8B898;
+            --sage-dark: #6B7D5A;
+            --burgundy: #7A2E3B;
+            --burgundy-light: #9A4E5B;
+            --charcoal: #2D2D2D;
+            --charcoal-light: #4A4A4A;
+            --text-primary: #2D2D2D;
+            --text-secondary: #6B6B6B;
+            --text-muted: #999999;
+            --border: #E0D8CE;
+            --border-light: #EDE8E0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --font-sans: 'DM Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            line-height: 1.5;
+            background: var(--cream);
+            color: var(--text-primary);
+        }
+
+        ::-webkit-scrollbar { width: 7px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .app-header {
+            height: 56px;
+            background: var(--charcoal);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--terracotta);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .logo-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-version {
+            color: white;
+            font-size: 13px;
+            font-weight: 300;
+            opacity: 0.6;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            font-family: var(--font-sans);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-primary { background: var(--terracotta); color: white; }
+        .btn-primary:hover { background: var(--terracotta-dark); }
+        .btn-secondary { background: rgba(255,255,255,0.12); color: white; border: none; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        .btn-outline { background: transparent; color: var(--text-primary); border: 1.5px solid var(--border); }
+        .btn-outline:hover { border-color: var(--charcoal); background: var(--cream-dark); }
+        .btn-success { background: var(--sage); color: white; }
+        .btn-success:hover { background: var(--sage-dark); }
+        .btn-danger { background: var(--burgundy); color: white; }
+        .btn-danger:hover { background: var(--burgundy-light); }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-icon { padding: 8px; width: 36px; height: 36px; justify-content: center; }
+
+        .app-layout {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            min-height: calc(100vh - 56px);
+        }
+
+        @media (max-width: 1100px) {
+            .app-layout { grid-template-columns: 1fr; }
+            .sidebar { max-height: none; }
+        }
+
+        .sidebar {
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            max-height: calc(100vh - 56px);
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .input-group { margin-bottom: 12px; }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-primary);
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            border: 1.5px solid var(--border);
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            background: var(--cream);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--terracotta);
+            background: var(--white);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            appearance: none;
+            cursor: pointer;
+            accent-color: var(--terracotta);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--terracotta);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tooltip-container { position: relative; }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background: #FFFDE7;
+            color: var(--text-primary);
+            text-align: left;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            font-size: 12px;
+            position: absolute;
+            z-index: 50;
+            top: 100%;
+            left: 0;
+            margin-top: 6px;
+            box-shadow: var(--shadow-md);
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-info { display: flex; flex-direction: column; }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .stat-value.accent { color: var(--terracotta); }
+        .stat-unit { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .tab {
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--charcoal);
+            color: var(--white);
+            border-color: var(--charcoal);
+        }
+
+        .tab:hover:not(.active) { border-color: var(--charcoal); }
+
+        .filter-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--cream);
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .filter-item:last-child { border-bottom: none; }
+        .filter-item:hover { background: var(--cream-dark); }
+        .filter-item.active { background: var(--white); }
+
+        .filter-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .filter-info { flex: 1; min-width: 0; }
+
+        .filter-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .filter-params {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .filter-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.15s;
+        }
+
+        .filter-btn:hover { background: var(--border-light); color: var(--text-primary); }
+        .filter-btn.delete:hover { background: #FEE; color: var(--burgundy); }
+
+        .ab-switch {
+            display: flex;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .ab-btn {
+            flex: 1;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ab-btn.active {
+            background: var(--terracotta);
+            color: white;
+        }
+
+        .ab-btn:not(.active):hover { background: var(--cream-dark); }
+
+        .presets-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .preset-btn {
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--terracotta);
+            background: var(--cream);
+        }
+
+        .preset-btn .preset-name { display: block; color: var(--text-primary); }
+        .preset-btn .preset-q { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+
+        .curve-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .color-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="color"] {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 1.5px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--terracotta);
+            cursor: pointer;
+        }
+
+        .checkbox-row span { font-size: 13px; color: var(--text-primary); }
+
+        .formulas-panel {
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-top: 12px;
+        }
+
+        .formula-item { margin-bottom: 10px; }
+        .formula-item:last-child { margin-bottom: 0; }
+
+        .formula-eq {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--charcoal);
+        }
+
+        .formula-desc {
+            font-size: 11px;
+            font-style: italic;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 56px);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chart-container {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-container .plot-wrapper { flex: 1; position: relative; }
+        .chart-container .plot-wrapper > div { width: 100%; height: 100%; position: absolute; }
+
+        .cursor-bar {
+            height: 36px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--cream);
+            border-top: 1px solid var(--border-light);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .cursor-bar i { margin-right: 8px; color: var(--text-muted); }
+
+        .freq-markers {
+            display: flex;
+            gap: 8px;
+        }
+
+        .freq-marker {
+            padding: 2px 6px;
+            background: var(--border-light);
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .freq-marker:hover {
+            background: var(--terracotta);
+            color: white;
+        }
+
+        .fade-enter-active { transition: all 0.2s ease-out; }
+        .fade-leave-active { transition: all 0.15s ease-in; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-8px); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <div class="logo-section">
+                <div class="logo-icon">V</div>
+                <span class="logo-text">Verio - Aplicaciones Didácticas</span>
+                <span class="logo-version">Calculadora de Ancho de Banda</span>
+            </div>
+            <div class="header-actions">
+                <button @click="exportCSV" class="btn btn-secondary">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button @click="exportGraph" class="btn btn-secondary">
+                    <i class="fas fa-image"></i> PNG
+                </button>
+            </div>
+        </header>
+
+        <div class="app-layout">
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <div class="section-title">Modo de Entrada</div>
+                    <div class="tabs">
+                        <button class="tab" :class="{ active: inputMode === 'qf0' }" @click="inputMode = 'qf0'">Q + f₀</button>
+                        <button class="tab" :class="{ active: inputMode === 'f1f2' }" @click="inputMode = 'f1f2'">f₁ + f₂</button>
+                    </div>
+
+                    <template v-if="inputMode === 'qf0'">
+                        <div class="input-group tooltip-container">
+                            <div class="input-row">
+                                <label class="input-label">Frec. Central f₀ (Hz):</label>
+                                <input type="number" v-model.number="f0" @input="calcFromQ" step="10">
+                            </div>
+                            <span class="tooltip-text">Define la frecuencia central del filtro.</span>
+                        </div>
+
+                        <div class="input-group tooltip-container">
+                            <div class="input-row">
+                                <label class="input-label">Factor de Calidad Q:</label>
+                                <input type="number" v-model.number="q" @input="onQInput" step="0.1">
+                            </div>
+                            <span class="tooltip-text">Define la 'agudeza' o selectividad del filtro.</span>
+                        </div>
+
+                        <div class="input-group tooltip-container">
+                            <input type="range" v-model.number="sliderQ" @input="handleSliderChange" min="0.1" max="20" step="0.01">
+                            <span class="tooltip-text">Arrastra para ajustar Q de forma interactiva.</span>
+                        </div>
+
+                        <div class="input-group tooltip-container">
+                            <div class="input-row">
+                                <label class="input-label">Octavas (N):</label>
+                                <input type="number" v-model.number="n" @input="onNInput" step="0.1">
+                            </div>
+                            <span class="tooltip-text">El ancho de banda expresado en octavas.</span>
+                        </div>
+                    </template>
+
+                    <template v-else>
+                        <div class="input-group tooltip-container">
+                            <div class="input-row">
+                                <label class="input-label">Freq. Corte f₁ (Hz):</label>
+                                <input type="number" v-model.number="f1Input" @input="calcFromF1F2" step="10">
+                            </div>
+                            <span class="tooltip-text">Frecuencia de corte inferior (-3dB).</span>
+                        </div>
+
+                        <div class="input-group tooltip-container">
+                            <div class="input-row">
+                                <label class="input-label">Freq. Corte f₂ (Hz):</label>
+                                <input type="number" v-model.number="f2Input" @input="calcFromF1F2" step="10">
+                            </div>
+                            <span class="tooltip-text">Frecuencia de corte superior (-3dB).</span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-title">Funciones de Transferencia</div>
+                    <div class="presets-grid">
+                        <button v-for="preset in presets" :key="preset.name" class="preset-btn" @click="applyPreset(preset)">
+                            <span class="preset-name">{{ preset.name }}</span>
+                            <span class="preset-q">Q = {{ preset.q }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-title">Resumen de Resultados</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <div class="stat-label">Ancho de Banda</div>
+                                <div class="stat-value">{{ formatNum(results.bw) }}</div>
+                            </div>
+                            <div class="stat-unit">Hz</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <div class="stat-label">Frecuencia de Corte f₁</div>
+                                <div class="stat-value accent">{{ formatNum(results.f1) }}</div>
+                            </div>
+                            <div class="stat-unit">Hz</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <div class="stat-label">Frecuencia de Corte f₂</div>
+                                <div class="stat-value accent">{{ formatNum(results.f2) }}</div>
+                            </div>
+                            <div class="stat-unit">Hz</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-title">Comparación A/B</div>
+                    <div class="ab-switch">
+                        <button class="ab-btn" :class="{ active: abMode === 'A' }" @click="switchAB('A')">A</button>
+                        <button class="ab-btn" :class="{ active: abMode === 'B' }" @click="switchAB('B')">B</button>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button @click="saveToAB" class="btn btn-outline btn-sm" style="width: 100%;">
+                            <i class="fas fa-save"></i> Guardar en {{ abMode }}
+                        </button>
+                    </div>
+                    <div style="margin-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">
+                        <div>A: {{ abConfigs.A ? `f₀=${abConfigs.A.f0} Q=${abConfigs.A.q}` : 'Sin guardar' }}</div>
+                        <div>B: {{ abConfigs.B ? `f₀=${abConfigs.B.f0} Q=${abConfigs.B.q}` : 'Sin guardar' }}</div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-title">Filtros Activos</div>
+                    <div class="actions-grid" style="margin-bottom: 10px;">
+                        <button @click="addFilter" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                        <button @click="clearFilters" :disabled="filters.length === 0" class="btn btn-outline btn-sm">
+                            <i class="fas fa-trash-alt"></i> Limpiar
+                        </button>
+                    </div>
+                    <div class="filter-list" v-if="filters.length > 0">
+                        <div v-for="(filter, index) in filters" :key="filter.id" 
+                             class="filter-item" :class="{ active: selectedFilterIndex === index }"
+                             @click="selectFilter(index)">
+                            <div class="filter-color" :style="{ background: filter.color }"></div>
+                            <div class="filter-info">
+                                <div class="filter-name">{{ filter.name }}</div>
+                                <div class="filter-params">f₀={{ filter.f0 }} Hz, Q={{ filter.q }}</div>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="filter-btn" @click.stop="editFilter(index)" title="Editar">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="filter-btn delete" @click.stop="removeFilter(index)" title="Eliminar">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px;">
+                        Sin filtros agregados
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="section-title">Parámetros de la Gráfica</div>
+                    <div class="curve-controls">
+                        <div>
+                            <label class="input-label" style="display: block; margin-bottom: 6px;">Color Curva</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" v-model="curveStyle.color" @input="updateGraph">
+                                <select v-model="curveStyle.dash" @change="updateGraph" style="flex: 1;">
+                                    <option value="solid">Sólida</option>
+                                    <option value="dot">Punteada</option>
+                                    <option value="dash">Discontinua</option>
+                                    <option value="dashdot">Punto y Raya</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="input-label" style="display: block; margin-bottom: 6px;">Rango Eje Y</label>
+                            <select v-model="yLimit" @change="updateGraph">
+                                <option value="-18">-18 dB</option>
+                                <option value="-36">-36 dB</option>
+                                <option value="-64">-64 dB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <label class="checkbox-row">
+                            <input type="checkbox" v-model="showPhase" @change="updateGraph">
+                            <span>Mostrar Respuesta de Fase</span>
+                        </label>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <label class="checkbox-row">
+                            <input type="checkbox" v-model="showCursor" @change="updateGraph">
+                            <span>Cursor Vertical Sincronizado</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <label class="checkbox-row">
+                        <input type="checkbox" v-model="showFormulas">
+                        <span>Mostrar Fórmulas de Referencia</span>
+                    </label>
+                    <transition name="fade">
+                        <div v-if="showFormulas" class="formulas-panel">
+                            <div v-for="formula in formulasRef" :key="formula.eq" class="formula-item">
+                                <div class="formula-eq">{{ formula.eq }}</div>
+                                <div class="formula-desc">{{ formula.desc }}</div>
+                            </div>
+                        </div>
+                    </transition>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <div class="chart-container" style="flex: 2;">
+                    <div class="plot-wrapper">
+                        <div id="plotMag"></div>
+                    </div>
+                    <div class="cursor-bar">
+                        <div>
+                            <i class="fas fa-crosshairs"></i>
+                            <span>Cursor: <span id="cursorInfo">---</span></span>
+                        </div>
+                        <div class="freq-markers">
+                            <span class="freq-marker" v-for="freq in notableFreqs" :key="freq" @click="snapToFreq(freq)">{{ formatFreq(freq) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="showPhase" class="chart-container" style="flex: 1; min-height: 200px;">
+                    <div class="plot-wrapper">
+                        <div id="plotPhase"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const inputMode = ref('qf0');
+                const f0 = ref(1000);
+                const q = ref(0.707);
+                const n = ref(0);
+                const sliderQ = ref(0.707);
+                const f1Input = ref(500);
+                const f2Input = ref(2000);
+                const results = ref({ bw: 0, f1: 0, f2: 0 });
+                const curveStyle = ref({ color: '#C4704B', dash: 'solid' });
+                const yLimit = ref('-36');
+                const showFormulas = ref(false);
+                const showPhase = ref(false);
+                const showCursor = ref(true);
+                const filters = ref([]);
+                const selectedFilterIndex = ref(-1);
+                const abMode = ref('A');
+                const abConfigs = ref({ A: null, B: null });
+                const cursorFreq = ref(null);
+                let filterIdCounter = 0;
+
+                const notableFreqs = [20, 100, 1000, 10000, 20000];
+
+                const presets = [
+                    { name: 'Butterworth', q: 0.707 },
+                    { name: 'Bessel', q: 0.577 },
+                    { name: 'Linkwitz-Riley', q: 0.5 },
+                    { name: 'Chebyshev 0.5dB', q: 0.864 },
+                    { name: '1 Octava', q: 1.414 },
+                    { name: '1/3 Octava', q: 4.318 },
+                    { name: '2/3 Octava', q: 2.145 },
+                    { name: 'Crítico', q: 0.5 }
+                ];
+
+                const filterColors = [
+                    '#C4704B', '#8B9D77', '#6B7B96', '#B8886F', '#8B6B8A',
+                    '#5D8A8E', '#A67C52', '#7B6BA6', '#6E8B74', '#96785D'
+                ];
+
+                const formulasRef = [
+                    { eq: "f₀ = √(f₁ · f₂)", desc: "Frec. central es la media geométrica." },
+                    { eq: "BW(Hz) = f₂ - f₁", desc: "Ancho de banda es la diferencia." },
+                    { eq: "BW(Hz) = f₀ / Q", desc: "Ancho de banda inverso a Q." },
+                    { eq: "N = log₂(f₂/f₁)", desc: "Relación de frec. a octavas." },
+                    { eq: "Q = 1 / (2·sinh(ln(2)·N/2))", desc: "Conversión Octavas a Q." }
+                ];
+
+                const sinh = (x) => (Math.exp(x) - Math.exp(-x)) / 2;
+                const asinh = (x) => Math.log(x + Math.sqrt(x * x + 1));
+                const qToOct = (qVal) => qVal <= 0 ? Infinity : (2 / Math.log(2)) * asinh(1 / (2 * qVal));
+                const octToQ = (nVal) => nVal <= 0 ? Infinity : 1 / (2 * sinh((Math.log(2) / 2) * nVal));
+
+                const calcFromQ = () => {
+                    if (q.value <= 0 || f0.value <= 0) return;
+                    n.value = parseFloat(qToOct(q.value).toFixed(6));
+                    if (sliderQ.value !== q.value) sliderQ.value = q.value;
+                    updateGraph();
+                };
+
+                const calcFromN = () => {
+                    if (n.value <= 0) return;
+                    q.value = parseFloat(octToQ(n.value).toFixed(6));
+                    sliderQ.value = q.value;
+                    updateGraph();
+                };
+
+                const calcFromF1F2 = () => {
+                    if (f1Input.value <= 0 || f2Input.value <= 0 || f1Input.value >= f2Input.value) return;
+                    f0.value = parseFloat(Math.sqrt(f1Input.value * f2Input.value).toFixed(2));
+                    const bw = f2Input.value - f1Input.value;
+                    q.value = parseFloat((f0.value / bw).toFixed(6));
+                    n.value = parseFloat(qToOct(q.value).toFixed(6));
+                    sliderQ.value = q.value;
+                    updateGraph();
+                };
+
+                const onQInput = () => { sliderQ.value = q.value; calcFromQ(); };
+                const onNInput = () => calcFromN();
+                const handleSliderChange = () => { q.value = parseFloat(parseFloat(sliderQ.value).toFixed(3)); calcFromQ(); };
+
+                const applyPreset = (preset) => {
+                    q.value = preset.q;
+                    sliderQ.value = preset.q;
+                    calcFromQ();
+                };
+
+                const switchAB = (mode) => {
+                    abMode.value = mode;
+                    const config = abConfigs.value[mode];
+                    if (config) {
+                        f0.value = config.f0;
+                        q.value = config.q;
+                        sliderQ.value = config.q;
+                        calcFromQ();
+                    }
+                };
+
+                const saveToAB = () => {
+                    abConfigs.value[abMode.value] = { f0: f0.value, q: q.value };
+                };
+
+                const addFilter = () => {
+                    const colorIndex = filters.value.length % filterColors.length;
+                    filters.value.push({
+                        id: ++filterIdCounter,
+                        name: `Filtro ${filterIdCounter}`,
+                        f0: f0.value,
+                        q: q.value,
+                        color: filterColors[colorIndex],
+                        visible: true
+                    });
+                    updateGraph();
+                };
+
+                const removeFilter = (index) => {
+                    filters.value.splice(index, 1);
+                    if (selectedFilterIndex.value >= filters.value.length) {
+                        selectedFilterIndex.value = filters.value.length - 1;
+                    }
+                    updateGraph();
+                };
+
+                const selectFilter = (index) => {
+                    selectedFilterIndex.value = index;
+                    const filter = filters.value[index];
+                    f0.value = filter.f0;
+                    q.value = filter.q;
+                    sliderQ.value = filter.q;
+                    curveStyle.value.color = filter.color;
+                    calcFromQ();
+                };
+
+                const editFilter = (index) => {
+                    const filter = filters.value[index];
+                    filter.f0 = f0.value;
+                    filter.q = q.value;
+                    updateGraph();
+                };
+
+                const clearFilters = () => {
+                    filters.value = [];
+                    selectedFilterIndex.value = -1;
+                    updateGraph();
+                };
+
+                const snapToFreq = (freq) => {
+                    f0.value = freq;
+                    calcFromQ();
+                };
+
+                const calculateCurveData = (f0Val, qVal) => {
+                    if (f0Val <= 0 || qVal <= 0) return null;
+                    const startExp = Math.log10(10);
+                    const endExp = Math.log10(Math.max(f0Val * 2, 20000) * 1.5);
+                    const steps = 500;
+                    let xData = [], yMag = [], yPhase = [];
+
+                    for (let i = 0; i < steps; i++) {
+                        let exp = startExp + (endExp - startExp) * (i / (steps - 1));
+                        let f = Math.pow(10, exp);
+                        xData.push(f);
+                        let term = (f / f0Val) - (f0Val / f);
+                        let mag = 1 / Math.sqrt(1 + qVal * qVal * term * term);
+                        let db = 20 * Math.log10(Math.max(mag, 1e-10));
+                        yMag.push(db);
+                        let phase = -Math.atan(qVal * term) * (180 / Math.PI);
+                        yPhase.push(phase);
+                    }
+
+                    const bwHz = f0Val / qVal;
+                    const termRoots = Math.sqrt(bwHz * bwHz + 4 * f0Val * f0Val);
+                    const f1Val = (-bwHz + termRoots) / 2;
+                    const f2Val = f1Val + bwHz;
+
+                    return { x: xData, yMag, yPhase, bwHz, f1Val, f2Val };
+                };
+
+                const updateGraph = () => {
+                    const calc = calculateCurveData(f0.value, q.value);
+                    if (!calc) return;
+
+                    results.value = { bw: calc.bwHz, f1: calc.f1Val, f2: calc.f2Val };
+
+                    const chartColors = { f0: '#C4704B', f1f2: '#8B9D77', line3db: '#7A2E3B' };
+
+                    const traces = [];
+
+                    filters.value.forEach((filter, idx) => {
+                        if (!filter.visible) return;
+                        const filterCalc = calculateCurveData(filter.f0, filter.q);
+                        if (filterCalc) {
+                            traces.push({
+                                x: filterCalc.x,
+                                y: filterCalc.yMag,
+                                mode: 'lines',
+                                name: filter.name,
+                                line: { color: filter.color, width: 2, dash: 'solid' },
+                                opacity: selectedFilterIndex.value === idx ? 1 : 0.6
+                            });
+                        }
+                    });
+
+                    traces.push({
+                        x: calc.x,
+                        y: calc.yMag,
+                        mode: 'lines',
+                        name: 'Actual',
+                        line: { color: curveStyle.value.color, dash: curveStyle.value.dash, width: 3 }
+                    });
+
+                    const shapes = [
+                        { type: 'line', x0: f0.value, x1: f0.value, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: chartColors.f0, width: 2, dash: 'dash' } },
+                        { type: 'line', x0: calc.f1Val, x1: calc.f1Val, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: chartColors.f1f2, width: 1.5, dash: 'dot' } },
+                        { type: 'line', x0: calc.f2Val, x1: calc.f2Val, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: chartColors.f1f2, width: 1.5, dash: 'dot' } },
+                        { type: 'line', x0: 0, x1: 1, y0: -3, y1: -3, xref: 'paper', yref: 'y', line: { color: chartColors.line3db, width: 1.5, dash: 'dash' } }
+                    ];
+
+                    if (cursorFreq.value && showCursor.value) {
+                        shapes.push({
+                            type: 'line', x0: cursorFreq.value, x1: cursorFreq.value, y0: 0, y1: 1,
+                            xref: 'x', yref: 'paper',
+                            line: { color: '#2D2D2D', width: 1, dash: 'dot' }
+                        });
+                    }
+
+                    const layoutMag = {
+                        title: { text: 'Respuesta en Magnitud', font: { family: 'DM Sans', color: '#2D2D2D', size: 16 } },
+                        paper_bgcolor: '#FFFFFF',
+                        plot_bgcolor: '#FFFFFF',
+                        xaxis: {
+                            type: 'log',
+                            title: { text: 'Frecuencia (Hz)', font: { family: 'DM Sans', color: '#2D2D2D' } },
+                            tickfont: { family: 'JetBrains Mono', color: '#6B6B6B', size: 11 },
+                            gridcolor: '#EDE8E0',
+                            linecolor: '#E0D8CE',
+                            range: [Math.log10(20), Math.log10(20000)]
+                        },
+                        yaxis: {
+                            title: { text: 'Ganancia (dB)', font: { family: 'DM Sans', color: '#2D2D2D' } },
+                            tickfont: { family: 'JetBrains Mono', color: '#6B6B6B', size: 11 },
+                            gridcolor: '#EDE8E0',
+                            linecolor: '#E0D8CE',
+                            range: [parseFloat(yLimit.value), 6]
+                        },
+                        margin: { l: 60, r: 30, t: 50, b: 50 },
+                        showlegend: true,
+                        legend: { x: 1, y: 1, xanchor: 'right', font: { family: 'DM Sans', size: 11 }, bgcolor: 'rgba(255,255,255,0.9)', bordercolor: '#E0D8CE', borderwidth: 1 },
+                        shapes: shapes,
+                        hovermode: 'x unified'
+                    };
+
+                    Plotly.react('plotMag', traces, layoutMag, { responsive: true, displayModeBar: false });
+
+                    const plotMag = document.getElementById('plotMag');
+                    plotMag.on('plotly_hover', function(data) {
+                        if (data.points.length > 0) {
+                            const pt = data.points[0];
+                            cursorFreq.value = pt.x;
+                            let info = `${pt.x.toLocaleString('en-US', { maximumFractionDigits: 1 })} Hz`;
+                            data.points.forEach(p => {
+                                info += ` | ${p.data.name}: ${p.y.toFixed(2)} dB`;
+                            });
+                            document.getElementById('cursorInfo').innerText = info;
+                            if (showCursor.value) updateGraph();
+                        }
+                    });
+                    plotMag.on('plotly_unhover', () => {
+                        document.getElementById('cursorInfo').innerText = "---";
+                        cursorFreq.value = null;
+                        if (showCursor.value) updateGraph();
+                    });
+
+                    if (showPhase.value) {
+                        const phaseTraces = [];
+
+                        filters.value.forEach((filter) => {
+                            if (!filter.visible) return;
+                            const filterCalc = calculateCurveData(filter.f0, filter.q);
+                            if (filterCalc) {
+                                phaseTraces.push({
+                                    x: filterCalc.x,
+                                    y: filterCalc.yPhase,
+                                    mode: 'lines',
+                                    name: filter.name,
+                                    line: { color: filter.color, width: 2 }
+                                });
+                            }
+                        });
+
+                        phaseTraces.push({
+                            x: calc.x,
+                            y: calc.yPhase,
+                            mode: 'lines',
+                            name: 'Actual',
+                            line: { color: curveStyle.value.color, dash: curveStyle.value.dash, width: 3 }
+                        });
+
+                        const phaseShapes = [];
+                        if (cursorFreq.value && showCursor.value) {
+                            phaseShapes.push({
+                                type: 'line', x0: cursorFreq.value, x1: cursorFreq.value, y0: 0, y1: 1,
+                                xref: 'x', yref: 'paper',
+                                line: { color: '#2D2D2D', width: 1, dash: 'dot' }
+                            });
+                        }
+
+                        const layoutPhase = {
+                            title: { text: 'Respuesta en Fase', font: { family: 'DM Sans', color: '#2D2D2D', size: 16 } },
+                            paper_bgcolor: '#FFFFFF',
+                            plot_bgcolor: '#FFFFFF',
+                            xaxis: {
+                                type: 'log',
+                                title: { text: 'Frecuencia (Hz)', font: { family: 'DM Sans', color: '#2D2D2D' } },
+                                tickfont: { family: 'JetBrains Mono', color: '#6B6B6B', size: 11 },
+                                gridcolor: '#EDE8E0',
+                                linecolor: '#E0D8CE',
+                                range: [Math.log10(20), Math.log10(20000)]
+                            },
+                            yaxis: {
+                                title: { text: 'Fase (°)', font: { family: 'DM Sans', color: '#2D2D2D' } },
+                                tickfont: { family: 'JetBrains Mono', color: '#6B6B6B', size: 11 },
+                                gridcolor: '#EDE8E0',
+                                linecolor: '#E0D8CE',
+                                range: [-90, 90]
+                            },
+                            margin: { l: 60, r: 30, t: 50, b: 50 },
+                            showlegend: false,
+                            shapes: phaseShapes,
+                            hovermode: 'x unified'
+                        };
+
+                        nextTick(() => {
+                            Plotly.react('plotPhase', phaseTraces, layoutPhase, { responsive: true, displayModeBar: false });
+                        });
+                    }
+                };
+
+                const exportGraph = () => {
+                    Plotly.downloadImage(document.getElementById('plotMag'), {
+                        format: 'png',
+                        filename: 'ancho_banda_magnitud',
+                        height: 800,
+                        width: 1200
+                    });
+                };
+
+                const exportCSV = () => {
+                    const calc = calculateCurveData(f0.value, q.value);
+                    if (!calc) return;
+
+                    let csv = 'Frecuencia (Hz),Magnitud (dB),Fase (grados)\n';
+                    for (let i = 0; i < calc.x.length; i++) {
+                        csv += `${calc.x[i].toFixed(2)},${calc.yMag[i].toFixed(4)},${calc.yPhase[i].toFixed(4)}\n`;
+                    }
+
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `ancho_banda_f0_${f0.value}_Q_${q.value}.csv`;
+                    link.click();
+                };
+
+                const formatNum = (v) => v ? v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---';
+                const formatFreq = (f) => f >= 1000 ? `${f/1000}k` : `${f}`;
+
+                watch(showPhase, () => { nextTick(updateGraph); });
+
+                onMounted(() => {
+                    n.value = parseFloat(qToOct(0.707).toFixed(6));
+                    updateGraph();
+                    window.addEventListener('resize', () => {
+                        Plotly.Plots.resize('plotMag');
+                        if (showPhase.value) Plotly.Plots.resize('plotPhase');
+                    });
+                });
+
+                return {
+                    inputMode, f0, q, n, sliderQ, f1Input, f2Input, results,
+                    curveStyle, yLimit, showFormulas, showPhase, showCursor,
+                    filters, selectedFilterIndex, abMode, abConfigs,
+                    presets, formulasRef, notableFreqs,
+                    formatNum, formatFreq,
+                    calcFromQ, onQInput, onNInput, handleSliderChange, calcFromF1F2,
+                    applyPreset, switchAB, saveToAB,
+                    addFilter, removeFilter, selectFilter, editFilter, clearFilters,
+                    snapToFreq, updateGraph, exportGraph, exportCSV
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
